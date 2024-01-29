@@ -1,0 +1,7 @@
+[env]
+TELOXIDE_TOKEN=""
+DATABASE_URL=""
+RUST_LOG=""
+LISTEN_URL=""
+APP_HOST=""
+

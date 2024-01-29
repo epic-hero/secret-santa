@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  rustapp:
+    container_name: rustapp
+    image: francescoxx/rustapp:1.0.0
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TELOXIDE_TOKEN: ""
+        DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres?public
+        RUST_LOG: DEBUG
+    ports:
+      - '443:443'
+      - '8443:8443'
+      - '80:80'
+    depends_on:
+      - postgres
+  postgres:
+    container_name: postgres
+    image: postgres:12
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: { }
