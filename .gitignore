@@ -2,3 +2,4 @@
 /migrations/target
 .idea
 .env
+.cargo/config.toml

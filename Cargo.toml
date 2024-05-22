@@ -3,13 +3,10 @@ name = "bot"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-tokio = { version = "1.8", features = ["rt-multi-thread", "macros"] }
-teloxide = { version = "0.12", features = ["macros", "webhooks-axum", "webhooks"] }
+tokio = { version = "1.12.0", features = ["rt-multi-thread","macros", "tracing"] }
+teloxide = { version = "0.12", features = ["macros", "webhooks-axum", "webhooks", "trace-adaptor"] }
 sea-orm = { version = "0.12.3", features = ["sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "macros", "debug-print"] }
-
 log = "0.4"
 pretty_env_logger = "0.4"
 dotenvy = "0.15.7"
@@ -23,4 +20,5 @@ strum = "0.25"
 openssl = { version = "0.10", features = ["vendored"] }
 ring = "0.17.5"
 openssl-sys = "0.9.95"
-reqwest = "0.11.20"
+reqwest = "0.12.4"
+async-trait = "0.1.80"

@@ -9,7 +9,7 @@ use teloxide::{prelude::*};
 use teloxide::types::{InputFile, KeyboardButton, KeyboardMarkup};
 use teloxide::utils::command::BotCommands;
 
-use crate::{db, DLEBot};
+use crate::{db, SantaBot};
 use crate::types::User;
 
 pub const IZHEVSK_CITY: &str = "Ижевск";
@@ -37,6 +37,8 @@ pub enum State {
     ChildChat,
     SantaChat,
     ChangeWishList,
+    Finish,
+    Distributed,
 }
 
 impl Display for State {
@@ -69,26 +71,25 @@ impl MyBot {
         MyBot {}
     }
 
-    pub async fn send_start(&self, bot: DLEBot, msg: Message) -> ResponseResult<()> {
+    pub async fn send_start(&self, bot: SantaBot, msg: Message) -> ResponseResult<()> {
         bot.send_message(msg.chat.id, "А теперь, внучок, представься и назови мне свое имя").await?;
         Ok(())
     }
 
-    pub async fn send_list_users(&self, bot: &DLEBot, msg: &Message, db: &db::DatabaseHandler) -> ResponseResult<()> {
+    pub async fn send_list_users(&self, bot: &SantaBot, msg: &Message, db: &db::DatabaseHandler) -> ResponseResult<()> {
         let users = db.get_all_users().await;
         bot.send_message(msg.chat.id, format!("Users: {:?}", users)).await?;
         Ok(())
     }
 
-    pub async fn notify(&self, bot: &DLEBot, db: &db::DatabaseHandler) -> ResponseResult<()> {
+    pub async fn notify(&self, bot: &SantaBot, db: &db::DatabaseHandler) -> ResponseResult<()> {
         let users = db.get_all_users().await
             .iter()
             .map(|user| (user.chat_id, user.clone()))
             .collect::<HashMap<i64, User>>();
 
-        for (_, user) in users.iter() {
+        for (_, mut user) in users.clone().into_iter() {
             match user.child {
-                None => {}
                 Some(child) => {
                     let child = users.get(&child).unwrap();
                     let response_msg = format!(include_str!("templates/state_5_notify.txt"),
@@ -103,13 +104,16 @@ impl MyBot {
                     bot.send_message(ChatId(user.chat_id), response_msg).await?;
 
                     send_keyboard(&bot, ChatId(user.chat_id)).await?;
+                    user.state = Option::from(State::Distributed);
+                    db.save_user(user).await;
                 }
+                None => {}
             }
         }
         Ok(())
     }
 
-    pub async fn distribute(&self, bot: &DLEBot, msg: &Message, db: &db::DatabaseHandler) -> ResponseResult<()> {
+    pub async fn distribute(&self, bot: &SantaBot, msg: &Message, db: &db::DatabaseHandler) -> ResponseResult<()> {
         let users: Vec<User> = db.get_all_users().await;
         let mut izhevsk: Vec<User> = vec![];
         let mut moscow: Vec<User> = vec![];
@@ -153,18 +157,19 @@ impl MyBot {
                 if user_first.santa.is_none() && user_second.child.is_none() {
                     user_first.set_santa(user_second.id);
                     user_second.set_child(user_first.id);
+                    user_second.state = Option::from(State::Distributed);
                 }
             }
         }
     }
 
-    pub async fn send_help(&self, bot: DLEBot, msg: Message) -> ResponseResult<()> {
+    pub async fn send_help(&self, bot: SantaBot, msg: Message) -> ResponseResult<()> {
         bot.send_message(msg.chat.id, "Не разобрался и не разобрался, с кем не бывает!").await?;
         Ok(())
     }
 }
 
-async fn send_keyboard(bot: &DLEBot, chat_id: ChatId) -> ResponseResult<()> {
+async fn send_keyboard(bot: &SantaBot, chat_id: ChatId) -> ResponseResult<()> {
     let keyboard = KeyboardMarkup::new([
         [KeyboardButton::new(KEY_CHILD_CHAT)],
         [KeyboardButton::new(KEY_SANTA_CHAT)],

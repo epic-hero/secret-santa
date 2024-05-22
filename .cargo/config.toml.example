@@ -1,0 +1,7 @@
+[env]
+TELOXIDE_TOKEN=""
+DATABASE_URL="postgres://postgres:postgres@localhost:5432/bot?public"
+RUST_LOG="trace"
+LISTEN_URL=""
+APP_HOST=""
+

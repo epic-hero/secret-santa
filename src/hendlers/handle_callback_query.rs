@@ -1,17 +1,15 @@
 use reqwest::Url;
 use teloxide::{prelude::*};
-use teloxide::adaptors::DefaultParseMode;
 use teloxide::types::{InputFile, KeyboardButton, KeyboardMarkup};
 
 use crate::bot::*;
 use crate::db::DatabaseHandler;
-
-pub type DLEBot = DefaultParseMode<Bot>;
+use crate::SantaBot;
 
 
 pub async fn handle_callback_query(
     db: DatabaseHandler,
-    bot: DLEBot,
+    bot: SantaBot,
     query: CallbackQuery,
 ) -> ResponseResult<()> {
     match query.data.as_deref() {
@@ -40,9 +38,9 @@ pub async fn handle_callback_query(
     Ok(())
 }
 
-async fn select_city(db: DatabaseHandler, bot: &DLEBot, query: CallbackQuery, city: &str) -> ResponseResult<()> {
+async fn select_city(db: DatabaseHandler, bot: &SantaBot, query: CallbackQuery, city: &str) -> ResponseResult<()> {
     let message = query.message.unwrap();
-    let text = format!(include_str!("templates/state_4_wait_notify.txt"), city);
+    let text = format!(include_str!("../templates/state_4_wait_notify.txt"), city);
     bot.edit_message_text(message.chat.id, message.id, text).await?;
     let keyboard = KeyboardMarkup::new([
         [KeyboardButton::new(CHANGE_WISH_LIST)]
@@ -62,7 +60,7 @@ async fn select_city(db: DatabaseHandler, bot: &DLEBot, query: CallbackQuery, ci
         .await?;
     let mut user = db.get_user(query.from.id.0 as i64).await.unwrap();
     user.city = city.to_string();
-    user.state = None;
+    user.state = Option::from(State::Finish);
     db.save_user(user).await;
     Ok(())
 }
