@@ -2,22 +2,22 @@ use std::convert::Infallible;
 use std::env;
 use std::net::SocketAddr;
 
-use teloxide::{prelude::*, update_listeners::webhooks};
-use teloxide::adaptors::{DefaultParseMode, Trace};
-use teloxide::adaptors::trace::Settings;
-use teloxide::update_listeners::UpdateListener;
 use crate::bot::Command;
+use teloxide::adaptors::trace::Settings;
+use teloxide::adaptors::{DefaultParseMode, Trace};
+use teloxide::update_listeners::UpdateListener;
+use teloxide::{prelude::*, update_listeners::webhooks};
 
 use crate::db::DatabaseHandler;
 use crate::hendlers::handle_callback_query::handle_callback_query;
 use crate::hendlers::handle_command::handle_command;
 use crate::hendlers::handle_message::handle_message;
 
-mod types;
 mod bot;
 mod db;
-mod states;
 mod hendlers;
+mod states;
+mod types;
 
 pub type SantaBot = DefaultParseMode<Trace<Bot>>;
 
@@ -38,17 +38,23 @@ async fn build_dispatcher() {
         .trace(Settings::TRACE_EVERYTHING_VERBOSE)
         .parse_mode(teloxide::types::ParseMode::Html);
 
-    return Dispatcher::builder(bot, dptree::entry()
-        .branch(Update::filter_message().filter_command::<Command>().endpoint(handle_command))
-        .branch(Update::filter_message().endpoint(handle_message))
-        .branch(Update::filter_callback_query().endpoint(handle_callback_query)))
+    return Dispatcher::builder(
+        bot,
+        dptree::entry()
+            .branch(
+                Update::filter_message()
+                    .filter_command::<Command>()
+                    .endpoint(handle_command),
+            )
+            .branch(Update::filter_message().endpoint(handle_message))
+            .branch(Update::filter_callback_query().endpoint(handle_callback_query)),
+    )
         .dependencies(dptree::deps![db])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
         .await;
 }
-
 
 #[cfg(not(debug_assertions))]
 async fn build_dispatcher() {
@@ -60,10 +66,17 @@ async fn build_dispatcher() {
 
     let listener = get_listener(bot.clone()).await;
 
-    Dispatcher::builder(bot, dptree::entry()
-        .branch(Update::filter_message().filter_command::<Command>().endpoint(handle_command))
-        .branch(Update::filter_message().endpoint(handle_message))
-        .branch(Update::filter_callback_query().endpoint(handle_callback_query)))
+    Dispatcher::builder(
+        bot,
+        dptree::entry()
+            .branch(
+                Update::filter_message()
+                    .filter_command::<Command>()
+                    .endpoint(handle_command),
+            )
+            .branch(Update::filter_message().endpoint(handle_message))
+            .branch(Update::filter_callback_query().endpoint(handle_callback_query)),
+    )
         .dependencies(dptree::deps![db])
         .enable_ctrlc_handler()
         .build()

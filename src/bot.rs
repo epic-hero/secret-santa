@@ -5,12 +5,12 @@ use std::fmt::Display;
 
 use reqwest::Url;
 use strum_macros::EnumString;
-use teloxide::{prelude::*};
+use teloxide::prelude::*;
 use teloxide::types::{InputFile, KeyboardButton, KeyboardMarkup};
 use teloxide::utils::command::BotCommands;
 
-use crate::{db, SantaBot};
 use crate::types::User;
+use crate::{db, SantaBot};
 
 pub const IZHEVSK_CITY: &str = "Ижевск";
 pub const MOSCOW_CITY: &str = "Москва";
@@ -47,9 +47,11 @@ impl Display for State {
     }
 }
 
-
 #[derive(BotCommands, Clone, Debug)]
-#[command(rename_rule = "lowercase", description = "These commands are supported:")]
+#[command(
+    rename_rule = "lowercase",
+    description = "These commands are supported:"
+)]
 pub enum Command {
     #[command(description = "Запуск бота")]
     Start,
@@ -72,18 +74,30 @@ impl MyBot {
     }
 
     pub async fn send_start(&self, bot: SantaBot, msg: Message) -> ResponseResult<()> {
-        bot.send_message(msg.chat.id, "А теперь, внучок, представься и назови мне свое имя").await?;
+        bot.send_message(
+            msg.chat.id,
+            "А теперь, внучок, представься и назови мне свое имя",
+        )
+        .await?;
         Ok(())
     }
 
-    pub async fn send_list_users(&self, bot: &SantaBot, msg: &Message, db: &db::DatabaseHandler) -> ResponseResult<()> {
+    pub async fn send_list_users(
+        &self,
+        bot: &SantaBot,
+        msg: &Message,
+        db: &db::DatabaseHandler,
+    ) -> ResponseResult<()> {
         let users = db.get_all_users().await;
-        bot.send_message(msg.chat.id, format!("Users: {:?}", users)).await?;
+        bot.send_message(msg.chat.id, format!("Users: {:?}", users))
+            .await?;
         Ok(())
     }
 
     pub async fn notify(&self, bot: &SantaBot, db: &db::DatabaseHandler) -> ResponseResult<()> {
-        let users = db.get_all_users().await
+        let users = db
+            .get_all_users()
+            .await
             .iter()
             .map(|user| (user.chat_id, user.clone()))
             .collect::<HashMap<i64, User>>();
@@ -92,15 +106,20 @@ impl MyBot {
             match user.child {
                 Some(child) => {
                     let child = users.get(&child).unwrap();
-                    let response_msg = format!(include_str!("templates/state_5_notify.txt"),
-                                               child.username);
+                    let response_msg =
+                        format!(include_str!("templates/state_5_notify.txt"), child.username);
                     bot.send_message(ChatId(user.chat_id), response_msg).await?;
                     let url_state_1 = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzZ4cTlpMm1nMXd6NWIzZTlnZW45YXM4dTByeWc1OWQzbXhtNXI3NCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/63Iznk0GDRB4U8f07H/giphy.gif";
-                    bot.send_animation(ChatId(user.chat_id), InputFile::url(Url::parse(url_state_1).unwrap()))
-                        .disable_notification(true)
-                        .await?;
-                    let response_msg = format!(include_str!("templates/state_5_notify_1.txt"),
-                                               child.wish_text);
+                    bot.send_animation(
+                        ChatId(user.chat_id),
+                        InputFile::url(Url::parse(url_state_1).unwrap()),
+                    )
+                    .disable_notification(true)
+                    .await?;
+                    let response_msg = format!(
+                        include_str!("templates/state_5_notify_1.txt"),
+                        child.wish_text
+                    );
                     bot.send_message(ChatId(user.chat_id), response_msg).await?;
 
                     send_keyboard(&bot, ChatId(user.chat_id)).await?;
@@ -113,17 +132,20 @@ impl MyBot {
         Ok(())
     }
 
-    pub async fn distribute(&self, bot: &SantaBot, msg: &Message, db: &db::DatabaseHandler) -> ResponseResult<()> {
+    pub async fn distribute(
+        &self,
+        bot: &SantaBot,
+        msg: &Message,
+        db: &db::DatabaseHandler,
+    ) -> ResponseResult<()> {
         let users: Vec<User> = db.get_all_users().await;
         let mut izhevsk: Vec<User> = vec![];
         let mut moscow: Vec<User> = vec![];
 
-        users.into_iter().for_each(|user| {
-            match user.city.as_str() {
-                IZHEVSK_CITY => { izhevsk.push(user) }
-                MOSCOW_CITY => { moscow.push(user) }
-                _ => {}
-            }
+        users.into_iter().for_each(|user| match user.city.as_str() {
+            IZHEVSK_CITY => izhevsk.push(user),
+            MOSCOW_CITY => moscow.push(user),
+            _ => {}
         });
 
         if izhevsk.len() != moscow.len() {
@@ -140,7 +162,9 @@ impl MyBot {
 
         bot.send_message(msg.chat.id, response_msg).await?;
 
-        let users = db.get_all_users().await
+        let users = db
+            .get_all_users()
+            .await
             .iter()
             .map(|user| (user.chat_id, user.clone()))
             .collect::<HashMap<i64, User>>();
@@ -164,7 +188,11 @@ impl MyBot {
     }
 
     pub async fn send_help(&self, bot: SantaBot, msg: Message) -> ResponseResult<()> {
-        bot.send_message(msg.chat.id, "Не разобрался и не разобрался, с кем не бывает!").await?;
+        bot.send_message(
+            msg.chat.id,
+            "Не разобрался и не разобрался, с кем не бывает!",
+        )
+        .await?;
         Ok(())
     }
 }
@@ -173,7 +201,8 @@ async fn send_keyboard(bot: &SantaBot, chat_id: ChatId) -> ResponseResult<()> {
     let keyboard = KeyboardMarkup::new([
         [KeyboardButton::new(KEY_CHILD_CHAT)],
         [KeyboardButton::new(KEY_SANTA_CHAT)],
-    ]).resize_keyboard(true);
+    ])
+    .resize_keyboard(true);
 
     bot.send_message(chat_id, "Можешь перейти к беседе с подопечным или Сантой:")
         .reply_markup(keyboard)

@@ -30,9 +30,7 @@ pub struct Message {
 
 impl User {
     pub fn to_users(users: Vec<Model>) -> Vec<User> {
-        users.into_iter()
-            .map(|user| User::to_user(user))
-            .collect()
+        users.into_iter().map(|user| User::to_user(user)).collect()
     }
     pub fn to_user(user: Model) -> User {
         User {

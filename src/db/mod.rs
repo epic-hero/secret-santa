@@ -1,11 +1,14 @@
 use std::env;
 
-use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectOptions, Database, DatabaseConnection, DbBackend, EntityTrait, QueryFilter, Statement};
 use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectOptions, Database, DatabaseConnection, DbBackend,
+    EntityTrait, QueryFilter, Statement,
+};
 
 use crate::bot::State;
-use crate::db::schema::{message, user};
 use crate::db::schema::user::Model;
+use crate::db::schema::{message, user};
 use crate::types::{Message, User};
 
 pub(crate) mod schema;
@@ -36,9 +39,16 @@ impl DatabaseHandler {
     }
 
     pub async fn save_message(&self, message_dto: Message) {
-        if let Some(message_db) = self.find_message(message_dto.santa_id, message_dto.child_id).await {
+        if let Some(message_db) = self
+            .find_message(message_dto.santa_id, message_dto.child_id)
+            .await
+        {
             let mut message: message::ActiveModel = message_db.into();
-            message.message = Set(format!("{}\n{}", message.message.unwrap(), message_dto.message));
+            message.message = Set(format!(
+                "{}\n{}",
+                message.message.unwrap(),
+                message_dto.message
+            ));
             if let Err(x) = message.update(&self.db).await {
                 log::error!("Error accessing the database: {:?}", x);
             }
@@ -65,8 +75,8 @@ impl DatabaseHandler {
             user.child = Set(user_dto.child);
             user.santa = Set(user_dto.santa);
             user.state = Set(match user_dto.state {
-                Some(state) => { state.to_string() }
-                _ => { "".to_string() }
+                Some(state) => state.to_string(),
+                _ => "".to_string(),
             });
             if let Err(x) = user.update(&self.db).await {
                 log::error!("Error accessing the database: {:?}", x);
@@ -81,7 +91,11 @@ impl DatabaseHandler {
                 username: Set(user_dto.username),
                 city: Set(user_dto.city),
                 wish_text: Set(user_dto.wish_text),
-                state: Set(user_dto.state.or(Option::from(State::default())).unwrap().to_string()),
+                state: Set(user_dto
+                    .state
+                    .or(Option::from(State::default()))
+                    .unwrap()
+                    .to_string()),
                 create_date: Set(user_dto.create_date),
             };
             if let Err(x) = new_user.insert(&self.db).await {
@@ -112,7 +126,8 @@ impl DatabaseHandler {
             })
     }
     pub async fn get_user(&self, user_id: i64) -> Option<User> {
-        self.find_user(user_id).await
+        self.find_user(user_id)
+            .await
             .map(|user| User::to_user(user))
     }
 

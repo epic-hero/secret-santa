@@ -2,14 +2,20 @@ use async_trait::async_trait;
 use chrono::Utc;
 use reqwest::Url;
 use sea_orm::prelude::DateTimeWithTimeZone;
-use teloxide::prelude::*;
 use teloxide::prelude::Message;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, InputFile, KeyboardButton, KeyboardMarkup};
+use teloxide::prelude::*;
+use teloxide::types::{
+    InlineKeyboardButton, InlineKeyboardMarkup, InputFile, KeyboardButton, KeyboardMarkup,
+};
 
-use crate::{SantaBot, types};
-use crate::bot::{CHANGE_WISH_CALLBACK, CHANGE_WISH_LIST, CHILD_PATTERN, CITY_CALLBACK_IZH, CITY_CALLBACK_MSK, IZHEVSK_CITY, KEY_CHILD_CHAT, KEY_CHILD_CHAT_CLOSE, KEY_SANTA_CHAT, KEY_SANTA_CHAT_CLOSE, MOSCOW_CITY, SANTA_PATTERN, State};
+use crate::bot::{
+    State, CHANGE_WISH_CALLBACK, CHANGE_WISH_LIST, CHILD_PATTERN, CITY_CALLBACK_IZH,
+    CITY_CALLBACK_MSK, IZHEVSK_CITY, KEY_CHILD_CHAT, KEY_CHILD_CHAT_CLOSE, KEY_SANTA_CHAT,
+    KEY_SANTA_CHAT_CLOSE, MOSCOW_CITY, SANTA_PATTERN,
+};
 use crate::db::DatabaseHandler;
 use crate::types::User;
+use crate::{types, SantaBot};
 
 pub(crate) struct ReceiveNameStrategy;
 
@@ -34,7 +40,7 @@ pub fn state_factory(state: &Option<State>) -> Box<dyn StateStrategy> {
         Some(State::ChangeWishList) => Box::new(ChangeWishListStrategy),
         Some(State::Finish) => Box::new(FinishStrategy),
         Some(State::Distributed) => Box::new(DistributedStrategy),
-        _ => panic!("State not found")
+        _ => panic!("State not found"),
     }
 }
 
@@ -55,13 +61,13 @@ impl StateStrategy for DistributedStrategy {
                     None => String::from("У вас еще нет сообщений с подопечным, но все что ты напишешь ниже я ему покажу")
                 };
 
-                let keyboard = KeyboardMarkup::new(
-                    [[KeyboardButton::new(KEY_CHILD_CHAT_CLOSE)]])
+                let keyboard = KeyboardMarkup::new([[KeyboardButton::new(KEY_CHILD_CHAT_CLOSE)]])
                     .resize_keyboard(true);
 
                 bot.send_message(msg.chat.id, message)
                     .reply_markup(keyboard)
-                    .await.unwrap();
+                    .await
+                    .unwrap();
 
                 let text = format!("<i>Все что напишете ниже я отправлю Подопечному, чтобы выйти из беседы, нажми '{}</i>'", KEY_CHILD_CHAT_CLOSE);
                 bot.send_message(msg.chat.id, text).await.unwrap();
@@ -77,13 +83,13 @@ impl StateStrategy for DistributedStrategy {
                     None => String::from("У вас еще нет сообщений с сантой, но все что ты напишешь ниже я ему покажу")
                 };
 
-                let keyboard = KeyboardMarkup::new(
-                    [[KeyboardButton::new(KEY_SANTA_CHAT_CLOSE)]])
+                let keyboard = KeyboardMarkup::new([[KeyboardButton::new(KEY_SANTA_CHAT_CLOSE)]])
                     .resize_keyboard(true);
 
                 bot.send_message(msg.chat.id, message)
                     .reply_markup(keyboard)
-                    .await.unwrap();
+                    .await
+                    .unwrap();
                 let text = format!("<i>Все что напишете ниже я отправлю Cанте, чтобы выйти из беседы, нажми '{}</i>'", KEY_SANTA_CHAT_CLOSE);
                 bot.send_message(msg.chat.id, text).await.unwrap();
 
@@ -100,14 +106,20 @@ impl StateStrategy for FinishStrategy {
     async fn handle(&self, mut user: User, msg: Message, bot: SantaBot, db: DatabaseHandler) {
         match msg.text() {
             Some(CHANGE_WISH_LIST) => {
-                let inline_keyboard = InlineKeyboardMarkup::new([
-                    [InlineKeyboardButton::callback("Изменить", CHANGE_WISH_CALLBACK)],
-                ]);
+                let inline_keyboard =
+                    InlineKeyboardMarkup::new([[InlineKeyboardButton::callback(
+                        "Изменить",
+                        CHANGE_WISH_CALLBACK,
+                    )]]);
 
-                let text = format!("Твой список желаний:\n{}\nХочешь его изменить?", user.wish_text);
+                let text = format!(
+                    "Твой список желаний:\n{}\nХочешь его изменить?",
+                    user.wish_text
+                );
                 bot.send_message(msg.chat.id, text)
                     .reply_markup(inline_keyboard)
-                    .await.unwrap();
+                    .await
+                    .unwrap();
 
                 user.state = Option::from(State::ChangeWishList);
                 db.save_user(user).await;
@@ -122,7 +134,9 @@ impl StateStrategy for ChangeWishListStrategy {
     async fn handle(&self, mut user: User, msg: Message, bot: SantaBot, db: DatabaseHandler) {
         match msg.text() {
             Some(message_text) => {
-                bot.send_message(msg.chat.id, "Список желаний успешно изменен!").await.unwrap();
+                bot.send_message(msg.chat.id, "Список желаний успешно изменен!")
+                    .await
+                    .unwrap();
                 user.wish_text = message_text.to_string();
                 user.state = Option::from(State::Finish);
                 db.save_user(user).await;
@@ -140,11 +154,13 @@ impl StateStrategy for ChildChatStrategy {
                 let keyboard = KeyboardMarkup::new([
                     [KeyboardButton::new(KEY_CHILD_CHAT)],
                     [KeyboardButton::new(KEY_SANTA_CHAT)],
-                ]).resize_keyboard(true);
+                ])
+                .resize_keyboard(true);
 
                 bot.send_message(msg.chat.id, "Можешь написать подопечнму или Санте:")
                     .reply_markup(keyboard)
-                    .await.unwrap();
+                    .await
+                    .unwrap();
                 user.state = Option::from(State::Distributed);
                 db.save_user(user).await;
             }
@@ -157,8 +173,12 @@ impl StateStrategy for ChildChatStrategy {
                     create_date: DateTimeWithTimeZone::from(Utc::now()),
                 };
                 db.save_message(message).await;
-                bot.send_message(ChatId(child_id), format!("У вас новое сообщение от Санты:\n{}", message_text))
-                    .await.unwrap();
+                bot.send_message(
+                    ChatId(child_id),
+                    format!("У вас новое сообщение от Санты:\n{}", message_text),
+                )
+                .await
+                .unwrap();
             }
             None => {}
         }
@@ -173,11 +193,13 @@ impl StateStrategy for SantaChatStrategy {
                 let keyboard = KeyboardMarkup::new([
                     [KeyboardButton::new(KEY_CHILD_CHAT)],
                     [KeyboardButton::new(KEY_SANTA_CHAT)],
-                ]).resize_keyboard(true);
+                ])
+                .resize_keyboard(true);
 
                 bot.send_message(msg.chat.id, "Можешь написать подопечнму или Санте:")
                     .reply_markup(keyboard)
-                    .await.unwrap();
+                    .await
+                    .unwrap();
                 user.state = Option::from(State::Distributed);
                 db.save_user(user).await;
             }
@@ -191,8 +213,12 @@ impl StateStrategy for SantaChatStrategy {
                 };
                 db.save_message(message).await;
 
-                bot.send_message(ChatId(santa_id), format!("У вас новое сообщение от подопечного:\n{}", message_text))
-                    .await.unwrap();
+                bot.send_message(
+                    ChatId(santa_id),
+                    format!("У вас новое сообщение от подопечного:\n{}", message_text),
+                )
+                .await
+                .unwrap();
             }
             None => {}
         }
@@ -205,14 +231,24 @@ impl StateStrategy for ReceiveWishStrategy {
         match msg.text() {
             Some(wish) => {
                 let inline_keyboard = InlineKeyboardMarkup::new([
-                    [InlineKeyboardButton::callback(MOSCOW_CITY, CITY_CALLBACK_MSK)],
-                    [InlineKeyboardButton::callback(IZHEVSK_CITY, CITY_CALLBACK_IZH)]
+                    [InlineKeyboardButton::callback(
+                        MOSCOW_CITY,
+                        CITY_CALLBACK_MSK,
+                    )],
+                    [InlineKeyboardButton::callback(
+                        IZHEVSK_CITY,
+                        CITY_CALLBACK_IZH,
+                    )],
                 ]);
 
-                bot.send_message(msg.chat.id, include_str!("templates/stat_3_select_city_0.txt"))
-                    .disable_web_page_preview(true)
-                    .reply_markup(inline_keyboard)
-                    .await.unwrap();
+                bot.send_message(
+                    msg.chat.id,
+                    include_str!("templates/stat_3_select_city_0.txt"),
+                )
+                .disable_web_page_preview(true)
+                .reply_markup(inline_keyboard)
+                .await
+                .unwrap();
 
                 user.wish_text = wish.parse().unwrap();
                 user.state = Option::from(State::ReceiveCity);
@@ -220,7 +256,8 @@ impl StateStrategy for ReceiveWishStrategy {
             }
             None => {
                 bot.send_message(msg.chat.id, "Отправьте мне обычный текст.")
-                    .await.unwrap();
+                    .await
+                    .unwrap();
             }
         }
     }
@@ -234,19 +271,36 @@ impl StateStrategy for ReceiveNameStrategy {
                 user.username = username.parse().unwrap();
                 user.state = Option::from(State::ReceiveWish);
 
-                bot.send_message(msg.chat.id, include_str!("templates/state_2_write_name_0.txt")).await.unwrap();
+                bot.send_message(
+                    msg.chat.id,
+                    include_str!("templates/state_2_write_name_0.txt"),
+                )
+                .await
+                .unwrap();
 
-                let url_state_2 = "https://www.sunhome.ru/i/cards/198/elka-animacionnaya-otkritka.orig.gif";
-                bot.send_animation(msg.chat.id, InputFile::url(Url::parse(url_state_2).unwrap()))
-                    .disable_notification(true)
-                    .await.unwrap();
+                let url_state_2 =
+                    "https://www.sunhome.ru/i/cards/198/elka-animacionnaya-otkritka.orig.gif";
+                bot.send_animation(
+                    msg.chat.id,
+                    InputFile::url(Url::parse(url_state_2).unwrap()),
+                )
+                .disable_notification(true)
+                .await
+                .unwrap();
 
-                bot.send_message(msg.chat.id, include_str!("templates/state_2_write_name_1.txt")).await.unwrap();
+                bot.send_message(
+                    msg.chat.id,
+                    include_str!("templates/state_2_write_name_1.txt"),
+                )
+                .await
+                .unwrap();
                 db.find_user(2).await;
                 db.save_user(user).await;
             }
             None => {
-                bot.send_message(msg.chat.id, "Отправьте мне обычный текст.").await.unwrap();
+                bot.send_message(msg.chat.id, "Отправьте мне обычный текст.")
+                    .await
+                    .unwrap();
             }
         }
     }
