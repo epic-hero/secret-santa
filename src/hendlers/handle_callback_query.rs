@@ -48,6 +48,7 @@ async fn select_city(
     query: CallbackQuery,
     city: &str,
 ) -> ResponseResult<()> {
+    bot.answer_callback_query(query.id).await.unwrap();
     let message = query.message.unwrap();
     let text = format!(include_str!("../templates/state_4_wait_notify.txt"), city);
     bot.edit_message_text(message.chat.id, message.id, text)
