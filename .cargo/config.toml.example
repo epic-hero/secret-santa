@@ -5,3 +5,8 @@ RUST_LOG="trace"
 LISTEN_URL=""
 APP_HOST=""
 
+SESSION_FILE="test.session"
+BOT_ID=""
+BOT_ACCESS_HASH=""
+TG_API_HASH=""
+TG_API_ID=""

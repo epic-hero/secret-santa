@@ -11,7 +11,7 @@ log = "0.4"
 pretty_env_logger = "0.4"
 dotenvy = "0.15.7"
 serde = { version = "1.0.188", features = ["derive"] }
-chrono = "0.4.22"
+chrono = "0.4.38"
 async_once = "0.2.6"
 strum_macros = "0.25.3"
 strum = "0.25"
@@ -22,3 +22,9 @@ ring = "0.17.5"
 openssl-sys = "0.9.95"
 reqwest = "0.12.4"
 async-trait = "0.1.80"
+
+[dev-dependencies]
+grammers-client = "0.6.0"
+grammers-session = "0.5.2"
+grammers-tl-types = "0.6.0"
+simple_logger = "5.0.0"

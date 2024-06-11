@@ -20,6 +20,7 @@ SantaBot - это телеграм бот, написанный на языке 
 - Библиотеки: tokio, teloxide
 - ORM: sea-orm
 - СУБД: PostgreSQL
+- Интеграционное тестирование: [grammers-client](https://crates.io/crates/grammers-client)
 
 ## Инструкции по установке и запуску:
 
@@ -33,3 +34,20 @@ SantaBot - это телеграм бот, написанный на языке 
 ## Схема:
 
 ![visualization.png](visualization.png)
+
+
+## Интеграционное тестирование Telegram бота
+
+Для проведения интеграционного тестирования Telegram бота, используется [Telegram API](https://core.telegram.org/api) с применением библиотеки [grammers-client](https://crates.io/crates/grammers-client) на языке программирования Rust, для запуска необходимо выполнить следующие шаги:
+
+1. Получить api_id и api_hash в разделе "[Инструменты разработки API](https://my.telegram.org/apps)".
+2. Прописать полученные api_id и api_hash в файле .cargo/config.toml в переменные TG_API_HASH и TG_API_ID.
+3. Указать BOT_ID и BOT_ACCESS_HASH для бота, который хотите протестировать.
+4. Запустить локальный тестовый сервер (тестируемого бота).
+5. Для запуска тестов выполнить команду:
+   ```cargo test --package bot --test test integration_test -- --exact```
+6. При первом запуске необходимо [авторизоваться](https://core.telegram.org/api/auth) через телеграм:
+   1. Запускаем приложение с **консоли**.
+   2. Приложение потребует ввести номер телефона, вводим.
+   3. После чего в Telegram придет сообщение с кодом авторизации.
+   4. Вводим код (создается файл сессии test.session и запускаются тесты).
